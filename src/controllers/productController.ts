@@ -8,15 +8,40 @@ export const fetchAllProducts = async (req: Request, res: Response) => {
   try {
     const sql = `SELECT * FROM products`;
     const [rows] = await db.query<IProduct[]>(sql);
+    const search = req.query.search;
+    const sort = req.query.sort;
 
-    // Convert DECIMAL prices to numbers
     const parsedProducts = rows.map(parsePrice);
     // rows.forEach((product) => {
     //   product.price = parseFloat(product.price as unknown as string);
     // });
 
-    res.json(parsedProducts);
-    console.log(parsedProducts);
+    let modifiedProductList = [...parsedProducts];
+
+    if (search) {
+      const nameSearch = search.toString().toLowerCase();
+
+      modifiedProductList = modifiedProductList.filter((product) =>
+        product.name.toLowerCase().includes(nameSearch)
+      );
+    }
+
+    if (sort) {
+      if (sort === 'asc') {
+        modifiedProductList = modifiedProductList.sort(
+          (a, b) => a.price - b.price
+        );
+      } else if (sort === 'desc') {
+        modifiedProductList = modifiedProductList.sort(
+          (a, b) => b.price - a.price
+        );
+      }
+    }
+
+    res.json(modifiedProductList.length ? modifiedProductList : parsedProducts);
+    console.log(
+      modifiedProductList.length ? modifiedProductList : parsedProducts
+    );
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     res.status(500).json({ error: message });
