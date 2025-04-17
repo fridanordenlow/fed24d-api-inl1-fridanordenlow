@@ -113,9 +113,9 @@ export const updateProduct = async (req: Request, res: Response) => {
   }
 
   if (!updates || Object.keys(updates).length === 0) {
-    res
-      .status(400)
-      .json({ error: 'At least one field must be provided to update product' });
+    res.status(400).json({
+      error: 'At least one field must be provided to update the product',
+    });
     return;
   }
 
