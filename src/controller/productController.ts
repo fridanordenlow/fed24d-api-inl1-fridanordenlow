@@ -114,6 +114,7 @@ export const updateProduct = async (req: Request, res: Response) => {
 
     res.json({
       message: 'Product updated',
+      productId: id,
       updatedFields: updates,
     });
   } catch (error: unknown) {
