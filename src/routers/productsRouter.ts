@@ -3,6 +3,7 @@ import {
   addProduct,
   fetchAllProducts,
   fetchSingleProduct,
+  updateProduct,
 } from '../controller/productController';
 
 const router = express.Router();
@@ -11,7 +12,7 @@ const router = express.Router();
 router.get('/', fetchAllProducts);
 router.get('/:id', fetchSingleProduct);
 router.post('/', addProduct); // Skapa en produkt
-// router.patch('/:id', fetch); // Uppdatera en produkt
+router.patch('/:id', updateProduct); // Uppdatera en produkt
 // router.delete('/:id', fetch); // Radera en produkt
 
 export default router;

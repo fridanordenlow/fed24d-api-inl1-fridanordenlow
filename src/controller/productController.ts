@@ -75,3 +75,49 @@ export const addProduct = async (req: Request, res: Response) => {
     res.status(500).json({ error: message });
   }
 };
+
+export const updateProduct = async (req: Request, res: Response) => {
+  const id = req.params.id;
+  const updates: Partial<IProduct> = req.body;
+
+  if (!id) {
+    res.status(400).json({ error: 'Product not found' });
+  }
+
+  if (!updates || Object.keys(updates).length === 0) {
+    res
+      .status(400)
+      .json({ error: 'At least one field must be provided to update product' });
+  }
+
+  try {
+    const keys = Object.keys(updates) as (keyof IProduct)[];
+    const fieldsToUpdate = keys
+      .map((key: keyof IProduct) => `${key} = ?`)
+      .join(',');
+    const values = keys.map((key) => updates[key]);
+    values.push(id);
+
+    const sql = `
+    UPDATE products
+    SET ${fieldsToUpdate}
+    WHERE id = ?
+    `;
+
+    const [result] = await db.query<ResultSetHeader>(sql, values);
+
+    if (result.affectedRows === 0) {
+      res.status(404).json({ message: 'Product not found' });
+    }
+
+    console.log(updates);
+
+    res.json({
+      message: 'Product updated',
+      updatedFields: updates,
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({ error: message });
+  }
+};
