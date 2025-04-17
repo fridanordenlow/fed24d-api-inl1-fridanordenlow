@@ -122,3 +122,29 @@ export const updateProduct = async (req: Request, res: Response) => {
     res.status(500).json({ error: message });
   }
 };
+
+export const deleteProduct = async (req: Request, res: Response) => {
+  const id = req.params.id;
+
+  if (!id) {
+    res.status(400).json({ error: 'Product not found' });
+  }
+
+  try {
+    const sql = `
+    DELETE FROM products
+    WHERE id = ?
+    `;
+
+    const [result] = await db.query<ResultSetHeader>(sql, [id]);
+
+    if (result.affectedRows === 0) {
+      res.status(404).json({ message: 'Product not found' });
+    }
+
+    res.json({ message: 'Product deleted', productId: id });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({ error: message });
+  }
+};
