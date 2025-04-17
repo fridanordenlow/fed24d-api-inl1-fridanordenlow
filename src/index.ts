@@ -1,9 +1,9 @@
 import express from 'express';
 import cors from 'cors';
-import { connectToDatabase } from './config/db';
-// import 'dotenv/config';
 
-// dotenv.config();
+import productsRouter from './routes/products';
+import categoriesRouter from './routes/categories';
+import { connectToDatabase } from './config/db';
 
 // Initialize app
 const app = express();
@@ -13,8 +13,8 @@ app.use(express.json());
 app.use(cors());
 
 // Routes
-import productsRouter from './routers/productsRouter';
 app.use('/products', productsRouter);
+app.use('/categories', categoriesRouter);
 
 // Connect to DB
 connectToDatabase();
