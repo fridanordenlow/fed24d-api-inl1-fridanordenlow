@@ -6,6 +6,6 @@ export interface IProduct extends RowDataPacket {
   description: string;
   stock: number;
   price: number;
-  image: string;
+  image_url: string;
   created_at: string;
 }
