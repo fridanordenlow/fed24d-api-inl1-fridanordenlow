@@ -65,6 +65,12 @@ export const fetchCategoryProducts = async (req: Request, res: Response) => {
 
     const [rows] = await db.query<IProductDBResponse[]>(sql, [categoryId]);
 
+    if (rows.length === 0) {
+      return res
+        .status(404)
+        .json({ message: `No products found for category ID ${categoryId}.` });
+    }
+
     const products = rows.map(formatProductFromDB);
 
     res.json(products);
