@@ -42,4 +42,4 @@ Se till att:
 
 1. Databasen är importerad från `inl1_eshop.sql`.
 2. Servern är igång (`npm run dev` eller liknande).
-3. Du gör förfrågningar till de angivna endpoints.
+3. Du gör förfrågningar till angivna endpoints.
