@@ -3,7 +3,7 @@ import { ResultSetHeader } from 'mysql2';
 import { db } from '../config/db';
 import { ICategory } from '../models/ICategory';
 import { IProductDBResponse } from '../models/IProductDBResponse';
-import { formatProduct } from '../helpers/formatProduct';
+import { formatProductFromDB } from '../helpers/formatProductFromDB';
 
 export const fetchAllCategories = async (req: Request, res: Response) => {
   try {
@@ -65,7 +65,7 @@ export const fetchCategoryProducts = async (req: Request, res: Response) => {
 
     const [rows] = await db.query<IProductDBResponse[]>(sql, [categoryId]);
 
-    const products = rows.map(formatProduct);
+    const products = rows.map(formatProductFromDB);
 
     res.json(products);
   } catch (error: unknown) {

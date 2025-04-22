@@ -3,50 +3,50 @@ import { ResultSetHeader } from 'mysql2';
 import { db } from '../config/db';
 import { IProduct } from '../models/IProduct';
 import { IProductDBResponse } from '../models/IProductDBResponse';
-import { formatProduct } from '../helpers/formatProduct';
-import { parsePrice } from '../helpers/parsePrice';
+import { formatProductFromDB } from '../helpers/formatProductFromDB';
 
 export const fetchAllProducts = async (req: Request, res: Response) => {
+  const { search, sort } = req.query;
+  console.log(search, sort);
+
+  let sql = `
+  SELECT 
+  p.id AS product_id,
+  p.name AS product_name,
+  p.description AS product_description,
+  p.stock AS product_stock,
+  p.price AS product_price,
+  p.image_url AS product_image_url,
+  p.created_at AS product_created_at,
+  GROUP_CONCAT(c.name SEPARATOR ', ') AS category_names
+  FROM products p
+  LEFT JOIN product_categories pc ON p.id = pc.product_id
+  LEFT JOIN categories c ON pc.category_id = c.id
+  `;
+
+  let params: any[] = [];
+  let searchSQL = '';
+  let sortSQL = '';
+
   try {
-    const sql = `SELECT * FROM products`;
-    const [rows] = await db.query<IProductDBResponse[]>(sql);
-
-    const formattedProducts: IProduct[] = rows.map(formatProduct);
-    const parsedProducts: IProduct[] = formattedProducts.map(parsePrice);
-
-    let modifiedProductList = [...parsedProducts];
-
-    const search = req.query.search;
-    const sort = req.query.sort;
-
-    // rows.forEach((product) => {
-    //   product.price = parseFloat(product.price as unknown as string);
-    // });
-
     if (search) {
-      const nameSearch = search.toString().toLowerCase();
-
-      modifiedProductList = modifiedProductList.filter((product) =>
-        product.name.toLowerCase().includes(nameSearch)
-      );
+      searchSQL = 'WHERE p.name LIKE ?';
+      params.push(`%${search}%`);
     }
 
     if (sort) {
-      if (sort === 'asc') {
-        modifiedProductList = modifiedProductList.sort(
-          (a, b) => a.price - b.price
-        );
-      } else if (sort === 'desc') {
-        modifiedProductList = modifiedProductList.sort(
-          (a, b) => b.price - a.price
-        );
-      }
+      const orderBy = sort === 'desc' ? 'DESC' : 'ASC';
+      sortSQL = `ORDER BY p.price ${orderBy}`;
     }
 
-    res.json(modifiedProductList.length ? modifiedProductList : parsedProducts);
-    console.log(
-      modifiedProductList.length ? modifiedProductList : parsedProducts
-    );
+    sql = sql + searchSQL + ' GROUP BY p.id ' + sortSQL;
+
+    const [rows] = await db.query<IProductDBResponse[]>(sql, params);
+
+    const productsFromDB: IProduct[] = rows.map(formatProductFromDB);
+
+    res.json(productsFromDB.length ? productsFromDB : []);
+    console.log(productsFromDB);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     res.status(500).json({ error: message });
@@ -57,10 +57,28 @@ export const fetchSingleProduct = async (req: Request, res: Response) => {
   const id = req.params.id;
 
   try {
+    // const sql = `
+    // SELECT * FROM products
+    // WHERE id = ?
+    // `;
+
     const sql = `
-    SELECT * FROM products 
-    WHERE id = ?
+      SELECT 
+        p.id AS product_id,
+        p.name AS product_name,
+        p.description AS product_description,
+        p.stock AS product_stock,
+        p.price AS product_price,
+        p.image_url AS product_image_url,
+        p.created_at AS product_created_at,
+        GROUP_CONCAT(c.name SEPARATOR ', ') AS category_names
+      FROM products p
+      LEFT JOIN product_categories pc ON p.id = pc.product_id
+      LEFT JOIN categories c ON pc.category_id = c.id
+      WHERE p.id = ?
+      GROUP BY p.id
     `;
+
     const [rows] = await db.query<IProductDBResponse[]>(sql, [id]);
     const productDB = rows[0];
 
@@ -69,11 +87,10 @@ export const fetchSingleProduct = async (req: Request, res: Response) => {
       return;
     }
 
-    const product = formatProduct(productDB);
-    const parsedProduct = parsePrice(product);
+    const product = formatProductFromDB(productDB);
 
-    console.log(parsedProduct);
-    res.json(parsedProduct);
+    console.log(product);
+    res.json(product);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     res.status(500).json({ error: message });
