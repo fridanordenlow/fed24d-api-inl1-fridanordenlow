@@ -2,21 +2,26 @@ import { Request, Response } from 'express';
 import { ResultSetHeader } from 'mysql2';
 import { db } from '../config/db';
 import { IProduct } from '../models/IProduct';
+import { IProductDBResponse } from '../models/IProductDBResponse';
+import { formatProduct } from '../helpers/formatProduct';
 import { parsePrice } from '../helpers/parsePrice';
 
 export const fetchAllProducts = async (req: Request, res: Response) => {
   try {
     const sql = `SELECT * FROM products`;
-    const [rows] = await db.query<IProduct[]>(sql);
+    const [rows] = await db.query<IProductDBResponse[]>(sql);
+
+    const formattedProducts: IProduct[] = rows.map(formatProduct);
+    const parsedProducts: IProduct[] = formattedProducts.map(parsePrice);
+
+    let modifiedProductList = [...parsedProducts];
+
     const search = req.query.search;
     const sort = req.query.sort;
 
-    const parsedProducts = rows.map(parsePrice);
     // rows.forEach((product) => {
     //   product.price = parseFloat(product.price as unknown as string);
     // });
-
-    let modifiedProductList = [...parsedProducts];
 
     if (search) {
       const nameSearch = search.toString().toLowerCase();
@@ -56,14 +61,15 @@ export const fetchSingleProduct = async (req: Request, res: Response) => {
     SELECT * FROM products 
     WHERE id = ?
     `;
-    const [rows] = await db.query<IProduct[]>(sql, [id]);
-    const product = rows[0];
+    const [rows] = await db.query<IProductDBResponse[]>(sql, [id]);
+    const productDB = rows[0];
 
-    if (!product) {
+    if (!productDB) {
       res.status(404).json({ message: 'Product not found' });
       return;
     }
 
+    const product = formatProduct(productDB);
     const parsedProduct = parsePrice(product);
 
     console.log(parsedProduct);
@@ -105,7 +111,7 @@ export const addProduct = async (req: Request, res: Response) => {
 
 export const updateProduct = async (req: Request, res: Response) => {
   const id = req.params.id;
-  const updates: Partial<IProduct> = req.body;
+  const updates: Partial<IProductDBResponse> = req.body;
 
   if (!id) {
     res.status(400).json({ error: 'Product not found' });
@@ -120,9 +126,9 @@ export const updateProduct = async (req: Request, res: Response) => {
   }
 
   try {
-    const keys = Object.keys(updates) as (keyof IProduct)[];
+    const keys = Object.keys(updates) as (keyof IProductDBResponse)[];
     const fieldsToUpdate = keys
-      .map((key: keyof IProduct) => `${key} = ?`)
+      .map((key: keyof IProductDBResponse) => `${key} = ?`)
       .join(',');
     const values = keys.map((key) => updates[key]);
     values.push(id);
