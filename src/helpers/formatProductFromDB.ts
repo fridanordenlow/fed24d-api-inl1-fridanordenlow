@@ -1,7 +1,7 @@
 import { IProduct } from '../models/IProduct';
 import { IProductDBResponse } from '../models/IProductDBResponse';
 
-export const formatProduct = (row: IProductDBResponse): IProduct => {
+export const formatProductFromDB = (row: IProductDBResponse): IProduct => {
   return {
     id: row.product_id,
     name: row.product_name,
